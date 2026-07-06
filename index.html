@@ -18,9 +18,25 @@
     --moon-shadow:#8089BE;
     --gold:#E7C588;
     --blush:#F1CBDA;
+    --star-op:.7;
     --radius:22px;
   }
+  html[data-theme="dark"]{
+    --bg-top:#211C36;
+    --bg-bottom:#171029;
+    --card:#2B2447;
+    --card-line:#3C3460;
+    --ink:#EDE9F9;
+    --ink-soft:#A79FCB;
+    --moon-light:#F1E6C9;
+    --moon-shadow:#403A66;
+    --gold:#D9B97A;
+    --blush:#4A3B57;
+    --star-op:1;
+  }
   *{box-sizing:border-box;}
+  html{color-scheme:light;}
+  html[data-theme="dark"]{color-scheme:dark;}
   body{
     margin:0;
     min-height:100vh;
@@ -30,6 +46,7 @@
     padding:32px 16px 64px;
     position:relative;
     overflow-x:hidden;
+    transition:background .35s ease, color .35s ease;
   }
   body::before{
     content:'';
@@ -43,23 +60,43 @@
       radial-gradient(1px 1px at 90% 40%, rgba(255,255,255,.7), transparent),
       radial-gradient(1.5px 1.5px at 45% 12%, rgba(255,255,255,.6), transparent);
     pointer-events:none;
-    opacity:.7;
+    opacity:var(--star-op);
+    transition:opacity .35s ease;
   }
   .wrap{max-width:640px;margin:0 auto;position:relative;}
+
+  .topbar{
+    display:flex;
+    align-items:center;
+    justify-content:flex-end;
+  }
+  .theme-toggle{
+    border:1px solid var(--card-line);
+    background:var(--card);
+    color:var(--ink);
+    width:38px;height:38px;
+    border-radius:50%;
+    cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    font-size:16px;
+    transition:background .2s, transform .2s;
+  }
+  .theme-toggle:hover{transform:scale(1.06);}
+  .theme-toggle:active{transform:scale(.94);}
 
   h1{
     font-family:'Fraunces',serif;
     font-weight:500;
     font-size:clamp(28px,6vw,38px);
     text-align:center;
-    margin:0 0 4px;
+    margin:8px 0 4px;
     letter-spacing:.2px;
   }
   .subtitle{
     text-align:center;
     color:var(--ink-soft);
     font-size:14px;
-    margin:0 0 32px;
+    margin:0 0 28px;
   }
 
   .hero{
@@ -72,6 +109,7 @@
     align-items:center;
     gap:14px;
     box-shadow:0 20px 40px -24px rgba(90,80,150,.35);
+    transition:background .35s ease, border-color .35s ease;
   }
   .moon-disc{
     position:relative;
@@ -82,14 +120,14 @@
       0 0 0 1px rgba(255,255,255,.5) inset,
       0 8px 30px -6px rgba(120,110,190,.5),
       0 0 40px 6px rgba(231,197,136,.25);
-    transition:transform .3s ease;
+    transition:background .35s ease;
   }
   .moon-disc.big{width:168px;height:168px;}
   .moon-shadow{
     position:absolute;
     inset:0;
     background:var(--moon-shadow);
-    transition:transform .5s cubic-bezier(.22,1,.36,1);
+    transition:transform .5s cubic-bezier(.22,1,.36,1), background .35s ease;
   }
   .hero-date{
     font-family:'Space Mono',monospace;
@@ -150,6 +188,22 @@
   }
   .today-btn.show{visibility:visible;}
 
+  .source-tag{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    font-size:10.5px;
+    color:var(--ink-soft);
+    font-family:'Space Mono',monospace;
+    letter-spacing:.02em;
+  }
+  .source-dot{
+    width:6px;height:6px;border-radius:50%;
+    background:#9AD6A8;
+    flex-shrink:0;
+  }
+  .source-dot.offline{background:#E0A8A8;}
+
   .calendar{
     margin-top:22px;
     background:var(--card);
@@ -157,6 +211,7 @@
     border-radius:var(--radius);
     padding:20px;
     box-shadow:0 20px 40px -28px rgba(90,80,150,.3);
+    transition:background .35s ease, border-color .35s ease;
   }
   .cal-nav{
     display:flex;
@@ -207,7 +262,7 @@
     background:transparent;
     transition:background .2s, border-color .2s, transform .15s;
   }
-  .day-cell:hover{background:rgba(122,117,163,.08);transform:translateY(-1px);}
+  .day-cell:hover{background:rgba(122,117,163,.12);transform:translateY(-1px);}
   .day-cell.empty{cursor:default;}
   .day-cell.empty:hover{background:transparent;transform:none;}
   .day-cell.is-today{border-color:var(--gold);}
@@ -236,6 +291,10 @@
 </head>
 <body>
 <div class="wrap">
+  <div class="topbar">
+    <button id="themeToggle" class="theme-toggle" aria-label="Cambiar modo claro/oscuro">🌙</button>
+  </div>
+
   <h1>Fases Lunares</h1>
   <p class="subtitle">Calculadora de la luna, día a día</p>
 
@@ -248,6 +307,7 @@
       <div class="stat"><b id="heroAge">--</b><span>DÍA LUNAR</span></div>
     </div>
     <div class="illum-bar"><div id="illumFill" class="illum-fill"></div></div>
+    <span id="sourceTag" class="source-tag"><span class="source-dot"></span><span id="sourceLabel">Comprobando fuente…</span></span>
     <button id="todayBtn" class="today-btn">Volver a hoy</button>
   </section>
 
@@ -264,22 +324,125 @@
   </section>
 
   <footer>
-    Calculado con el algoritmo astronómico estándar del mes sinódico (29.53 días), a partir de la luna nueva de referencia del 6 de enero de 2000.
+    Datos de fase lunar: <strong>US Naval Observatory</strong> (aa.usno.navy.mil), la referencia astronómica oficial de EE. UU., vía su API pública. Si no hay conexión, la app calcula la fase localmente con el algoritmo del mes sinódico (29.53 días) para seguir funcionando sin cortes.
   </footer>
 </div>
 
 <script>
+  /* ---------- Tema claro / oscuro ---------- */
+  const root = document.documentElement;
+  const themeToggle = document.getElementById('themeToggle');
+  function applyTheme(mode){
+    root.setAttribute('data-theme', mode);
+    themeToggle.textContent = mode === 'dark' ? '☀️' : '🌙';
+    try{ localStorage.setItem('moon-theme', mode); }catch(e){ /* almacenamiento no disponible, se ignora */ }
+  }
+  let storedTheme = null;
+  try{ storedTheme = localStorage.getItem('moon-theme'); }catch(e){ /* sin storage disponible */ }
+  const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  applyTheme(storedTheme || (prefersDark ? 'dark' : 'light'));
+  themeToggle.addEventListener('click', () => {
+    applyTheme(root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+  });
+
+  /* ---------- Cálculo local de respaldo (algoritmo sinódico) ---------- */
   const SYNODIC = 29.530588853;
   const KNOWN_NEW_MOON = Date.UTC(2000,0,6,18,14,0);
   const PHASE_NAMES = ['Luna nueva','Creciente','Cuarto creciente','Gibosa creciente','Luna llena','Gibosa menguante','Cuarto menguante','Menguante'];
   const MONTH_NAMES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
 
-  function moonPhaseFraction(date){
+  function localPhaseFraction(date){
     const days = (date.getTime() - KNOWN_NEW_MOON) / 86400000;
     let p = (days % SYNODIC) / SYNODIC;
     if(p < 0) p += 1;
     return p;
   }
+
+  /* ---------- Datos precisos vía API del US Naval Observatory ---------- */
+  // Anclas reales (Luna Nueva=0, Cuarto Creciente=0.25, Luna Llena=0.5, Cuarto Menguante=0.75)
+  let anchors = []; // [{time: ms, frac: 0|0.25|0.5|0.75}]
+  let usingLiveData = false;
+
+  async function fetchAnchors(centerDate){
+    const y = centerDate.getFullYear();
+    const m = centerDate.getMonth() + 1;
+    const d = centerDate.getDate();
+    // Pedimos hacia atrás ~35 días para tener un ancla previa, y suficientes fases hacia delante
+    const startDate = new Date(centerDate);
+    startDate.setDate(startDate.getDate() - 35);
+    const sy = startDate.getFullYear(), sm = startDate.getMonth()+1, sd = startDate.getDate();
+    const url = `https://aa.usno.navy.mil/api/moon/phases/date?date=${sy}-${sm}-${sd}&nump=40`;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 6000);
+    const res = await fetch(url, { signal: controller.signal });
+    clearTimeout(timeout);
+    if(!res.ok) throw new Error('USNO respondió con error');
+    const data = await res.json();
+    const fracByName = {'New Moon':0, 'First Quarter':0.25, 'Full Moon':0.5, 'Last Quarter':0.75};
+    return data.phasedata.map(ph => ({
+      time: Date.UTC(ph.year, ph.month-1, ph.day, ...ph.time.split(':').map(Number)),
+      frac: fracByName[ph.phase]
+    })).sort((a,b) => a.time - b.time);
+  }
+
+  function anchorsCoverRange(list, from, to){
+    if(!list.length) return false;
+    return list[0].time <= from.getTime() && list[list.length-1].time >= to.getTime();
+  }
+
+  function preciseFractionFromAnchors(date, list){
+    const t = date.getTime();
+    let before = null, after = null;
+    for(let i=0;i<list.length-1;i++){
+      if(list[i].time <= t && list[i+1].time >= t){ before = list[i]; after = list[i+1]; break; }
+    }
+    if(!before || !after) return null;
+    // Interpolación lineal en el tiempo entre dos fases primarias reales conocidas
+    const span = after.time - before.time;
+    const progress = span === 0 ? 0 : (t - before.time) / span;
+    let fracBefore = before.frac;
+    let fracAfter = after.frac;
+    if(fracAfter <= fracBefore) fracAfter += 1; // cruza de 0.75 a 1.0(=0)
+    let frac = fracBefore + (fracAfter - fracBefore) * progress;
+    if(frac >= 1) frac -= 1;
+    return frac;
+  }
+
+  function moonPhaseFraction(date){
+    if(usingLiveData){
+      const f = preciseFractionFromAnchors(date, anchors);
+      if(f !== null) return f;
+    }
+    return localPhaseFraction(date);
+  }
+
+  const sourceDotEl = document.querySelector('.source-dot');
+  const sourceLabelEl = document.getElementById('sourceLabel');
+  function setSourceStatus(live){
+    usingLiveData = live;
+    sourceDotEl.classList.toggle('offline', !live);
+    sourceLabelEl.textContent = live ? 'Datos precisos: US Naval Observatory' : 'Sin conexión: cálculo local aproximado';
+  }
+
+  async function ensureAnchorsFor(date){
+    if(anchorsCoverRange(anchors, new Date(date.getFullYear(), date.getMonth()-1, 1), new Date(date.getFullYear(), date.getMonth()+2, 0))){
+      setSourceStatus(true);
+      return;
+    }
+    try{
+      const fresh = await fetchAnchors(date);
+      if(fresh.length){
+        anchors = fresh;
+        setSourceStatus(true);
+      } else {
+        setSourceStatus(false);
+      }
+    }catch(err){
+      setSourceStatus(false);
+    }
+  }
+
+  /* ---------- Utilidades de fase ---------- */
   function illumination(p){
     return (1 - Math.cos(2*Math.PI*p)) / 2;
   }
@@ -382,26 +545,35 @@
     }
   }
 
-  document.getElementById('prevMonth').addEventListener('click', () => {
-    viewMonth--;
-    if(viewMonth < 0){ viewMonth = 11; viewYear--; }
+  async function goToMonth(y, m){
+    viewYear = y; viewMonth = m;
     renderCalendar();
+    await ensureAnchorsFor(new Date(viewYear, viewMonth, 15));
+    renderCalendar();
+    renderHero(selectedDate);
+  }
+
+  document.getElementById('prevMonth').addEventListener('click', () => {
+    let m = viewMonth - 1, y = viewYear;
+    if(m < 0){ m = 11; y--; }
+    goToMonth(y, m);
   });
   document.getElementById('nextMonth').addEventListener('click', () => {
-    viewMonth++;
-    if(viewMonth > 11){ viewMonth = 0; viewYear++; }
-    renderCalendar();
+    let m = viewMonth + 1, y = viewYear;
+    if(m > 11){ m = 0; y++; }
+    goToMonth(y, m);
   });
   todayBtn.addEventListener('click', () => {
     selectedDate = new Date(today);
-    viewYear = today.getFullYear();
-    viewMonth = today.getMonth();
-    renderHero(selectedDate);
-    renderCalendar();
+    goToMonth(today.getFullYear(), today.getMonth());
   });
 
   renderHero(selectedDate);
   renderCalendar();
+  ensureAnchorsFor(today).then(() => {
+    renderHero(selectedDate);
+    renderCalendar();
+  });
 </script>
 </body>
 </html>
