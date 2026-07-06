@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fases Lunares</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Sora:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-top:#EDE9F7;
+    --bg-bottom:#C7D3F2;
+    --card:#FBF9FF;
+    --card-line:#E2DCF3;
+    --ink:#443F6B;
+    --ink-soft:#7A75A3;
+    --moon-light:#FDF6E8;
+    --moon-shadow:#8089BE;
+    --gold:#E7C588;
+    --blush:#F1CBDA;
+    --radius:22px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    min-height:100vh;
+    background:linear-gradient(180deg,var(--bg-top) 0%,var(--bg-bottom) 100%);
+    font-family:'Sora',sans-serif;
+    color:var(--ink);
+    padding:32px 16px 64px;
+    position:relative;
+    overflow-x:hidden;
+  }
+  body::before{
+    content:'';
+    position:fixed;
+    inset:0;
+    background-image:
+      radial-gradient(2px 2px at 10% 20%, rgba(255,255,255,.9), transparent),
+      radial-gradient(1.5px 1.5px at 80% 15%, rgba(255,255,255,.8), transparent),
+      radial-gradient(1.5px 1.5px at 60% 8%, rgba(255,255,255,.7), transparent),
+      radial-gradient(2px 2px at 30% 35%, rgba(255,255,255,.6), transparent),
+      radial-gradient(1px 1px at 90% 40%, rgba(255,255,255,.7), transparent),
+      radial-gradient(1.5px 1.5px at 45% 12%, rgba(255,255,255,.6), transparent);
+    pointer-events:none;
+    opacity:.7;
+  }
+  .wrap{max-width:640px;margin:0 auto;position:relative;}
+
+  h1{
+    font-family:'Fraunces',serif;
+    font-weight:500;
+    font-size:clamp(28px,6vw,38px);
+    text-align:center;
+    margin:0 0 4px;
+    letter-spacing:.2px;
+  }
+  .subtitle{
+    text-align:center;
+    color:var(--ink-soft);
+    font-size:14px;
+    margin:0 0 32px;
+  }
+
+  .hero{
+    background:var(--card);
+    border:1px solid var(--card-line);
+    border-radius:var(--radius);
+    padding:32px 24px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:14px;
+    box-shadow:0 20px 40px -24px rgba(90,80,150,.35);
+  }
+  .moon-disc{
+    position:relative;
+    border-radius:50%;
+    background:var(--moon-light);
+    overflow:hidden;
+    box-shadow:
+      0 0 0 1px rgba(255,255,255,.5) inset,
+      0 8px 30px -6px rgba(120,110,190,.5),
+      0 0 40px 6px rgba(231,197,136,.25);
+    transition:transform .3s ease;
+  }
+  .moon-disc.big{width:168px;height:168px;}
+  .moon-shadow{
+    position:absolute;
+    inset:0;
+    background:var(--moon-shadow);
+    transition:transform .5s cubic-bezier(.22,1,.36,1);
+  }
+  .hero-date{
+    font-family:'Space Mono',monospace;
+    font-size:13px;
+    color:var(--ink-soft);
+    text-transform:capitalize;
+  }
+  .hero-phase{
+    font-family:'Fraunces',serif;
+    font-weight:600;
+    font-size:24px;
+    margin-top:-2px;
+  }
+  .hero-stats{
+    display:flex;
+    gap:28px;
+    margin-top:6px;
+  }
+  .stat{text-align:center;}
+  .stat b{
+    display:block;
+    font-family:'Space Mono',monospace;
+    font-size:18px;
+  }
+  .stat span{
+    font-size:11px;
+    color:var(--ink-soft);
+    letter-spacing:.03em;
+  }
+  .illum-bar{
+    width:100%;
+    max-width:220px;
+    height:6px;
+    border-radius:4px;
+    background:rgba(122,117,163,.18);
+    overflow:hidden;
+    margin-top:4px;
+  }
+  .illum-fill{
+    height:100%;
+    background:linear-gradient(90deg,var(--blush),var(--gold));
+    border-radius:4px;
+    transition:width .5s ease;
+  }
+
+  .today-btn{
+    margin-top:6px;
+    border:none;
+    background:transparent;
+    color:var(--ink-soft);
+    font-family:'Sora',sans-serif;
+    font-size:12.5px;
+    text-decoration:underline;
+    text-underline-offset:3px;
+    cursor:pointer;
+    padding:4px;
+    visibility:hidden;
+  }
+  .today-btn.show{visibility:visible;}
+
+  .calendar{
+    margin-top:22px;
+    background:var(--card);
+    border:1px solid var(--card-line);
+    border-radius:var(--radius);
+    padding:20px;
+    box-shadow:0 20px 40px -28px rgba(90,80,150,.3);
+  }
+  .cal-nav{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:14px;
+  }
+  .cal-nav button{
+    border:none;
+    background:var(--blush);
+    color:var(--ink);
+    width:32px;height:32px;
+    border-radius:50%;
+    font-size:16px;
+    cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    transition:background .2s;
+  }
+  .cal-nav button:hover{background:var(--gold);}
+  .cal-nav .month-label{
+    font-family:'Fraunces',serif;
+    font-weight:500;
+    font-size:17px;
+    text-transform:capitalize;
+  }
+  .weekdays,.days{
+    display:grid;
+    grid-template-columns:repeat(7,1fr);
+    gap:6px;
+  }
+  .weekdays{margin-bottom:6px;}
+  .weekdays span{
+    text-align:center;
+    font-size:11px;
+    color:var(--ink-soft);
+    font-family:'Space Mono',monospace;
+  }
+  .day-cell{
+    aspect-ratio:1/1;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:3px;
+    border-radius:14px;
+    cursor:pointer;
+    border:1.5px solid transparent;
+    background:transparent;
+    transition:background .2s, border-color .2s, transform .15s;
+  }
+  .day-cell:hover{background:rgba(122,117,163,.08);transform:translateY(-1px);}
+  .day-cell.empty{cursor:default;}
+  .day-cell.empty:hover{background:transparent;transform:none;}
+  .day-cell.is-today{border-color:var(--gold);}
+  .day-cell.is-selected{background:var(--blush);}
+  .day-num{
+    font-family:'Space Mono',monospace;
+    font-size:11px;
+    color:var(--ink-soft);
+  }
+  .moon-disc.mini{width:22px;height:22px;}
+
+  footer{
+    text-align:center;
+    margin-top:26px;
+    font-size:11.5px;
+    color:var(--ink-soft);
+    line-height:1.6;
+    padding:0 12px;
+  }
+
+  @media (max-width:380px){
+    .hero-stats{gap:16px;}
+    .moon-disc.big{width:140px;height:140px;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Fases Lunares</h1>
+  <p class="subtitle">Calculadora de la luna, día a día</p>
+
+  <section class="hero">
+    <div id="heroDate" class="hero-date"></div>
+    <div id="heroMoon" class="moon-disc big"><div class="moon-shadow"></div></div>
+    <div id="heroPhase" class="hero-phase"></div>
+    <div class="hero-stats">
+      <div class="stat"><b id="heroIllum">--</b><span>ILUMINACIÓN</span></div>
+      <div class="stat"><b id="heroAge">--</b><span>DÍA LUNAR</span></div>
+    </div>
+    <div class="illum-bar"><div id="illumFill" class="illum-fill"></div></div>
+    <button id="todayBtn" class="today-btn">Volver a hoy</button>
+  </section>
+
+  <section class="calendar">
+    <div class="cal-nav">
+      <button id="prevMonth" aria-label="Mes anterior">‹</button>
+      <div id="monthLabel" class="month-label"></div>
+      <button id="nextMonth" aria-label="Mes siguiente">›</button>
+    </div>
+    <div class="weekdays">
+      <span>L</span><span>M</span><span>X</span><span>J</span><span>V</span><span>S</span><span>D</span>
+    </div>
+    <div id="daysGrid" class="days"></div>
+  </section>
+
+  <footer>
+    Calculado con el algoritmo astronómico estándar del mes sinódico (29.53 días), a partir de la luna nueva de referencia del 6 de enero de 2000.
+  </footer>
+</div>
+
+<script>
+  const SYNODIC = 29.530588853;
+  const KNOWN_NEW_MOON = Date.UTC(2000,0,6,18,14,0);
+  const PHASE_NAMES = ['Luna nueva','Creciente','Cuarto creciente','Gibosa creciente','Luna llena','Gibosa menguante','Cuarto menguante','Menguante'];
+  const MONTH_NAMES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+
+  function moonPhaseFraction(date){
+    const days = (date.getTime() - KNOWN_NEW_MOON) / 86400000;
+    let p = (days % SYNODIC) / SYNODIC;
+    if(p < 0) p += 1;
+    return p;
+  }
+  function illumination(p){
+    return (1 - Math.cos(2*Math.PI*p)) / 2;
+  }
+  function phaseName(p){
+    const idx = Math.round(p*8) % 8;
+    return PHASE_NAMES[idx];
+  }
+  function offsetPercent(p){
+    const mag = illumination(p) * 100;
+    const sign = p < 0.5 ? -1 : 1;
+    return sign * mag;
+  }
+  function applyMoonVisual(el, p){
+    const shadow = el.querySelector('.moon-shadow');
+    shadow.style.transform = `translateX(${offsetPercent(p).toFixed(1)}%)`;
+  }
+  function sameDay(a,b){
+    return a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth() && a.getDate()===b.getDate();
+  }
+  function formatDateLong(d){
+    return d.toLocaleDateString('es-ES',{weekday:'long', day:'numeric', month:'long', year:'numeric'});
+  }
+
+  const today = new Date();
+  today.setHours(12,0,0,0);
+  let viewYear = today.getFullYear();
+  let viewMonth = today.getMonth();
+  let selectedDate = new Date(today);
+
+  const heroMoon = document.getElementById('heroMoon');
+  const heroDate = document.getElementById('heroDate');
+  const heroPhase = document.getElementById('heroPhase');
+  const heroIllum = document.getElementById('heroIllum');
+  const heroAge = document.getElementById('heroAge');
+  const illumFill = document.getElementById('illumFill');
+  const todayBtn = document.getElementById('todayBtn');
+
+  function renderHero(date){
+    const p = moonPhaseFraction(date);
+    applyMoonVisual(heroMoon, p);
+    heroDate.textContent = formatDateLong(date);
+    heroPhase.textContent = phaseName(p);
+    heroIllum.textContent = Math.round(illumination(p)*100) + '%';
+    heroAge.textContent = (p*SYNODIC).toFixed(1) + ' d';
+    illumFill.style.width = Math.round(illumination(p)*100) + '%';
+    todayBtn.classList.toggle('show', !sameDay(date, today));
+  }
+
+  function daysInMonth(y,m){ return new Date(y, m+1, 0).getDate(); }
+  function mondayIndex(y,m,d){
+    const wd = new Date(y,m,d).getDay(); // 0=Sun
+    return (wd + 6) % 7; // 0=Mon
+  }
+
+  const daysGrid = document.getElementById('daysGrid');
+  const monthLabel = document.getElementById('monthLabel');
+
+  function renderCalendar(){
+    monthLabel.textContent = `${MONTH_NAMES[viewMonth]} ${viewYear}`;
+    daysGrid.innerHTML = '';
+    const total = daysInMonth(viewYear, viewMonth);
+    const leading = mondayIndex(viewYear, viewMonth, 1);
+
+    for(let i=0;i<leading;i++){
+      const empty = document.createElement('div');
+      empty.className = 'day-cell empty';
+      daysGrid.appendChild(empty);
+    }
+    for(let d=1; d<=total; d++){
+      const cellDate = new Date(viewYear, viewMonth, d, 12,0,0,0);
+      const p = moonPhaseFraction(cellDate);
+
+      const cell = document.createElement('div');
+      cell.className = 'day-cell';
+      if(sameDay(cellDate, today)) cell.classList.add('is-today');
+      if(sameDay(cellDate, selectedDate)) cell.classList.add('is-selected');
+
+      const num = document.createElement('div');
+      num.className = 'day-num';
+      num.textContent = d;
+
+      const mini = document.createElement('div');
+      mini.className = 'moon-disc mini';
+      const miniShadow = document.createElement('div');
+      miniShadow.className = 'moon-shadow';
+      mini.appendChild(miniShadow);
+
+      cell.appendChild(mini);
+      cell.appendChild(num);
+      applyMoonVisual(mini, p);
+
+      cell.title = `${phaseName(p)} · ${Math.round(illumination(p)*100)}%`;
+      cell.addEventListener('click', () => {
+        selectedDate = cellDate;
+        renderHero(selectedDate);
+        renderCalendar();
+      });
+
+      daysGrid.appendChild(cell);
+    }
+  }
+
+  document.getElementById('prevMonth').addEventListener('click', () => {
+    viewMonth--;
+    if(viewMonth < 0){ viewMonth = 11; viewYear--; }
+    renderCalendar();
+  });
+  document.getElementById('nextMonth').addEventListener('click', () => {
+    viewMonth++;
+    if(viewMonth > 11){ viewMonth = 0; viewYear++; }
+    renderCalendar();
+  });
+  todayBtn.addEventListener('click', () => {
+    selectedDate = new Date(today);
+    viewYear = today.getFullYear();
+    viewMonth = today.getMonth();
+    renderHero(selectedDate);
+    renderCalendar();
+  });
+
+  renderHero(selectedDate);
+  renderCalendar();
+</script>
+</body>
+</html>
